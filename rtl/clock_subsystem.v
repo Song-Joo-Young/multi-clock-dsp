@@ -313,7 +313,16 @@ module multi_clock_dsp_top #(
     //=========================================================================
     // Status
     //=========================================================================
-    output wire        is_test_mode
+    output wire        is_test_mode,
+
+    //=========================================================================
+    // Messy Clock Network Interface
+    //=========================================================================
+    input  wire        messy_clk_en,
+    input  wire        messy_feedback_en,
+    input  wire [63:0] messy_data_in,
+    output wire [63:0] messy_data_out,
+    output wire        messy_gclk_out
 );
 
     //=========================================================================
@@ -443,6 +452,21 @@ module multi_clock_dsp_top #(
         .sample_out (dsp_out),
         .valid_out  (dsp_valid),
         .busy       (dsp_busy)
+    );
+
+    //=========================================================================
+    // Messy Clock Network (with feedback loop and ICG)
+    //=========================================================================
+    clock_network_messy u_messy_clk (
+        .clk_in       (sys_clk),
+        .rst_n        (rst_n),
+        .scan_enable  (scan_enable),
+        .enable       (1'b1),
+        .main_clk_en  (messy_clk_en),
+        .feedback_en  (messy_feedback_en),
+        .data_in      (messy_data_in),
+        .data_out     (messy_data_out),
+        .gclk_main    (messy_gclk_out)
     );
 
 endmodule

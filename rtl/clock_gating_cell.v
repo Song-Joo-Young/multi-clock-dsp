@@ -1,8 +1,7 @@
 //-----------------------------------------------------------------------------
 // Module: clock_gating_cell
 // Description: ICG (Integrated Clock Gating) cell wrapper
-//              Uses Nangate CLKGATETST_X1 for synthesis
-//              Behavioral model for simulation
+//              Uses Nangate CLKGATETST_X1 library cell
 //-----------------------------------------------------------------------------
 
 module clock_gating_cell (
@@ -12,9 +11,8 @@ module clock_gating_cell (
     output wire clk_out      // Gated clock output
 );
 
-`ifdef SYNTHESIS
     //-------------------------------------------------------------------------
-    // Synthesis: Instantiate Nangate Library ICG cell
+    // Instantiate Nangate Library ICG cell (CLKGATETST_X1)
     //-------------------------------------------------------------------------
     CLKGATETST_X1 u_icg (
         .CK  (clk_in),
@@ -23,31 +21,13 @@ module clock_gating_cell (
         .GCK (clk_out)
     );
 
-`else
-    //-------------------------------------------------------------------------
-    // Simulation: Behavioral model (latch-based ICG)
-    //-------------------------------------------------------------------------
-    reg latch_out;
-
-    // Latch enable on negative edge of clock (transparent when clk_in = 0)
-    always @(*) begin
-        if (!clk_in) begin
-            latch_out <= enable | scan_enable;
-        end
-    end
-
-    // AND gated clock
-    assign clk_out = clk_in & latch_out;
-
-`endif
-
 endmodule
 
 
 //-----------------------------------------------------------------------------
 // Module: clock_gating_cell_no_test
 // Description: ICG cell without scan enable (basic version)
-//              Uses Nangate CLKGATE_X1 for synthesis
+//              Uses Nangate CLKGATE_X1 library cell
 //-----------------------------------------------------------------------------
 
 module clock_gating_cell_no_test (
@@ -56,30 +36,13 @@ module clock_gating_cell_no_test (
     output wire clk_out   // Gated clock output
 );
 
-`ifdef SYNTHESIS
     //-------------------------------------------------------------------------
-    // Synthesis: Instantiate Nangate Library ICG cell (no test)
+    // Instantiate Nangate Library ICG cell (CLKGATE_X1)
     //-------------------------------------------------------------------------
     CLKGATE_X1 u_icg (
         .CK  (clk_in),
         .E   (enable),
         .GCK (clk_out)
     );
-
-`else
-    //-------------------------------------------------------------------------
-    // Simulation: Behavioral model
-    //-------------------------------------------------------------------------
-    reg latch_out;
-
-    always @(*) begin
-        if (!clk_in) begin
-            latch_out <= enable;
-        end
-    end
-
-    assign clk_out = clk_in & latch_out;
-
-`endif
 
 endmodule
