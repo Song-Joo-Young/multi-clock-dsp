@@ -98,6 +98,97 @@ module clock_network_messy (
         else if (enable) fb_reg2 <= ~fb_reg2;
     end
 
+    //=========================================================================
+    // LOGIC USING mux0_out (clock loop node 0) - 8 registers
+    // These ensure mux0_out is recognized as a clock
+    //=========================================================================
+    reg [7:0] m0_r0, m0_r1, m0_r2, m0_r3, m0_r4, m0_r5, m0_r6, m0_r7;
+
+    always @(posedge mux0_out or negedge rst_n) begin
+        if (!rst_n) m0_r0 <= 8'h0; else m0_r0 <= data_in[7:0];
+    end
+    always @(posedge mux0_out or negedge rst_n) begin
+        if (!rst_n) m0_r1 <= 8'h0; else m0_r1 <= m0_r0 + 8'h11;
+    end
+    always @(posedge mux0_out or negedge rst_n) begin
+        if (!rst_n) m0_r2 <= 8'h0; else m0_r2 <= m0_r1 ^ m0_r0;
+    end
+    always @(posedge mux0_out or negedge rst_n) begin
+        if (!rst_n) m0_r3 <= 8'h0; else m0_r3 <= m0_r2 & m0_r1;
+    end
+    always @(posedge mux0_out or negedge rst_n) begin
+        if (!rst_n) m0_r4 <= 8'h0; else m0_r4 <= m0_r3 | m0_r2;
+    end
+    always @(posedge mux0_out or negedge rst_n) begin
+        if (!rst_n) m0_r5 <= 8'h0; else m0_r5 <= m0_r4 + m0_r3;
+    end
+    always @(posedge mux0_out or negedge rst_n) begin
+        if (!rst_n) m0_r6 <= 8'h0; else m0_r6 <= m0_r5 - m0_r4;
+    end
+    always @(posedge mux0_out or negedge rst_n) begin
+        if (!rst_n) m0_r7 <= 8'h0; else m0_r7 <= m0_r6 ^ m0_r5;
+    end
+
+    //=========================================================================
+    // LOGIC USING mux1_out (clock loop node 1) - 8 registers
+    //=========================================================================
+    reg [7:0] m1_r0, m1_r1, m1_r2, m1_r3, m1_r4, m1_r5, m1_r6, m1_r7;
+
+    always @(posedge mux1_out or negedge rst_n) begin
+        if (!rst_n) m1_r0 <= 8'h0; else m1_r0 <= data_in[15:8];
+    end
+    always @(posedge mux1_out or negedge rst_n) begin
+        if (!rst_n) m1_r1 <= 8'h0; else m1_r1 <= m1_r0 + 8'h22;
+    end
+    always @(posedge mux1_out or negedge rst_n) begin
+        if (!rst_n) m1_r2 <= 8'h0; else m1_r2 <= m1_r1 ^ m1_r0;
+    end
+    always @(posedge mux1_out or negedge rst_n) begin
+        if (!rst_n) m1_r3 <= 8'h0; else m1_r3 <= m1_r2 & m1_r1;
+    end
+    always @(posedge mux1_out or negedge rst_n) begin
+        if (!rst_n) m1_r4 <= 8'h0; else m1_r4 <= m1_r3 | m1_r2;
+    end
+    always @(posedge mux1_out or negedge rst_n) begin
+        if (!rst_n) m1_r5 <= 8'h0; else m1_r5 <= m1_r4 + m1_r3;
+    end
+    always @(posedge mux1_out or negedge rst_n) begin
+        if (!rst_n) m1_r6 <= 8'h0; else m1_r6 <= m1_r5 - m1_r4;
+    end
+    always @(posedge mux1_out or negedge rst_n) begin
+        if (!rst_n) m1_r7 <= 8'h0; else m1_r7 <= m1_r6 ^ m1_r5;
+    end
+
+    //=========================================================================
+    // LOGIC USING mux2_out (clock loop node 2) - 8 registers
+    //=========================================================================
+    reg [7:0] m2_r0, m2_r1, m2_r2, m2_r3, m2_r4, m2_r5, m2_r6, m2_r7;
+
+    always @(posedge mux2_out or negedge rst_n) begin
+        if (!rst_n) m2_r0 <= 8'h0; else m2_r0 <= data_in[23:16];
+    end
+    always @(posedge mux2_out or negedge rst_n) begin
+        if (!rst_n) m2_r1 <= 8'h0; else m2_r1 <= m2_r0 + 8'h33;
+    end
+    always @(posedge mux2_out or negedge rst_n) begin
+        if (!rst_n) m2_r2 <= 8'h0; else m2_r2 <= m2_r1 ^ m2_r0;
+    end
+    always @(posedge mux2_out or negedge rst_n) begin
+        if (!rst_n) m2_r3 <= 8'h0; else m2_r3 <= m2_r2 & m2_r1;
+    end
+    always @(posedge mux2_out or negedge rst_n) begin
+        if (!rst_n) m2_r4 <= 8'h0; else m2_r4 <= m2_r3 | m2_r2;
+    end
+    always @(posedge mux2_out or negedge rst_n) begin
+        if (!rst_n) m2_r5 <= 8'h0; else m2_r5 <= m2_r4 + m2_r3;
+    end
+    always @(posedge mux2_out or negedge rst_n) begin
+        if (!rst_n) m2_r6 <= 8'h0; else m2_r6 <= m2_r5 - m2_r4;
+    end
+    always @(posedge mux2_out or negedge rst_n) begin
+        if (!rst_n) m2_r7 <= 8'h0; else m2_r7 <= m2_r6 ^ m2_r5;
+    end
+
     //-------------------------------------------------------------------------
     // Additional Mixed Clock: Combining div and feedback
     //-------------------------------------------------------------------------
@@ -381,9 +472,11 @@ module clock_network_messy (
     end
 
     //=========================================================================
-    // OUTPUT: Combine all domains (including gclk domain)
+    // OUTPUT: Combine all domains (including clock loop nodes)
     //=========================================================================
-    assign data_out = {mb_r7, ma_r7, fb2_r7, fb1_r7, fb0_r7, d8_r7, d4_r7, gm_r7};
+    // Include mux0/1/2 outputs to ensure they're not optimized away
+    assign data_out = {m2_r7, m1_r7, m0_r7, fb2_r7, fb1_r7, fb0_r7, gm_r7,
+                       d2_r7 ^ d4_r7 ^ d8_r7 ^ ma_r7 ^ mb_r7};
 
 endmodule
 
