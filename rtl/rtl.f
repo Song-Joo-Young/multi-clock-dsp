@@ -38,6 +38,11 @@ example_logic.v
 clock_domain_logic.v
 
 // ============================================
+// Messy clock network (divider + feedback combined)
+// ============================================
+clock_network_messy.v
+
+// ============================================
 // Top-level integration
 // ============================================
 clock_subsystem.v
