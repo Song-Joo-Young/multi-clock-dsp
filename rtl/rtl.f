@@ -2,7 +2,7 @@
 // Top module: multi_clock_dsp_top (in clock_subsystem.v)
 
 // ============================================
-// Basic building blocks (bottom-up order)
+// Basic building blocks
 // ============================================
 clock_gating_cell.v
 clock_mux.v
@@ -22,27 +22,33 @@ bist_clock_ctrl.v
 dft_clock_ctrl.v
 
 // ============================================
-// Complex clock network (hierarchical ICG)
+// Clock networks
 // ============================================
 clock_network_complex.v
-
-// ============================================
-// DSP and example logic
-// ============================================
-dsp_core.v
-example_logic.v
-
-// ============================================
-// Clock domain logic (multiple users per clock)
-// ============================================
-clock_domain_logic.v
-
-// ============================================
-// Messy clock network (divider + feedback combined)
-// ============================================
 clock_network_messy.v
 
 // ============================================
-// Top-level integration
+// DSP and logic
+// ============================================
+dsp_core.v
+example_logic.v
+clock_domain_logic.v
+
+// ============================================
+// Test patterns for duplicate detection
+// ============================================
+clock_reconvergence.v
+clock_corner_cases.v
+clock_cross_primary.v
+clock_hierarchical_dup.v
+clock_multi_path.v
+clock_generate_array.v
+clock_wire_conflict.v
+clock_latch_gen.v
+clock_long_chain.v
+clock_test_patterns.v
+
+// ============================================
+// Top-level
 // ============================================
 clock_subsystem.v
