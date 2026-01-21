@@ -1,0 +1,22 @@
+# Ignore PowerSpion folder
+PowerSpion/
+
+# Simulation outputs
+*.vvp
+*.vcd
+*.wlf
+*.log
+
+# Synthesis outputs
+*.db
+work/
+*.svf
+
+# Editor backups
+*~
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
