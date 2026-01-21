@@ -33,6 +33,11 @@ dsp_core.v
 example_logic.v
 
 // ============================================
+// Clock domain logic (multiple users per clock)
+// ============================================
+clock_domain_logic.v
+
+// ============================================
 // Top-level integration
 // ============================================
 clock_subsystem.v
