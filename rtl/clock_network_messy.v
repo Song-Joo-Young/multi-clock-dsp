@@ -8,26 +8,48 @@
 module clock_network_messy (
     input  wire        clk_in,
     input  wire        rst_n,
+    input  wire        scan_enable,
     input  wire        enable,
+
+    // Main clock gate enable
+    input  wire        main_clk_en,
 
     // Feedback control
     input  wire        feedback_en,
 
     // Data
     input  wire [63:0] data_in,
-    output wire [63:0] data_out
+    output wire [63:0] data_out,
+
+    // Gated clock output for monitoring
+    output wire        gclk_main
 );
 
     //=========================================================================
-    // CLOCK GENERATION SECTION
+    // MAIN CLOCK GATING (Instantiated ICG at root)
+    //=========================================================================
+    wire gclk;  // Gated main clock - distributed to all logic
+
+    clock_gating_cell u_icg_main (
+        .clk_in      (clk_in),
+        .enable      (main_clk_en),
+        .scan_enable (scan_enable),
+        .clk_out     (gclk)
+    );
+
+    assign gclk_main = gclk;
+
+    //=========================================================================
+    // CLOCK GENERATION SECTION (all driven by gated clock)
     //=========================================================================
 
     //-------------------------------------------------------------------------
-    // Regular Clock Divider Chain: clk_in -> div2 -> div4 -> div8
+    // Regular Clock Divider Chain: gclk -> div2 -> div4 -> div8
     //-------------------------------------------------------------------------
     reg clk_div2_reg, clk_div4_reg, clk_div8_reg;
 
-    always @(posedge clk_in or negedge rst_n) begin
+    // First divider uses gated main clock
+    always @(posedge gclk or negedge rst_n) begin
         if (!rst_n) clk_div2_reg <= 1'b0;
         else if (enable) clk_div2_reg <= ~clk_div2_reg;
     end
@@ -44,12 +66,13 @@ module clock_network_messy (
 
     //-------------------------------------------------------------------------
     // Feedback Clock Divider: MUX -> REG -> MUX -> REG -> MUX -> REG -> feedback
+    // Uses gclk (gated main clock) as source
     //-------------------------------------------------------------------------
     wire mux0_out, mux1_out, mux2_out;
     reg  fb_reg0, fb_reg1, fb_reg2;
 
-    // MUX0: clk_in or feedback from fb_reg2
-    assign mux0_out = feedback_en ? fb_reg2 : clk_in;
+    // MUX0: gclk (gated clock) or feedback from fb_reg2
+    assign mux0_out = feedback_en ? fb_reg2 : gclk;
 
     // FB Stage 0
     always @(posedge mux0_out or negedge rst_n) begin
@@ -327,9 +350,40 @@ module clock_network_messy (
     end
 
     //=========================================================================
-    // OUTPUT: Combine all domains
+    // LOGIC USING gclk (gated main clock directly) - 8 registers
+    // This ensures gclk is recognized as a clock by the tool
     //=========================================================================
-    assign data_out = {mb_r7, ma_r7, fb2_r7, fb1_r7, fb0_r7, d8_r7, d4_r7, d2_r7};
+    reg [7:0] gm_r0, gm_r1, gm_r2, gm_r3, gm_r4, gm_r5, gm_r6, gm_r7;
+
+    always @(posedge gclk or negedge rst_n) begin
+        if (!rst_n) gm_r0 <= 8'h0; else gm_r0 <= data_in[7:0] ^ data_in[63:56];
+    end
+    always @(posedge gclk or negedge rst_n) begin
+        if (!rst_n) gm_r1 <= 8'h0; else gm_r1 <= gm_r0 + 8'hAA;
+    end
+    always @(posedge gclk or negedge rst_n) begin
+        if (!rst_n) gm_r2 <= 8'h0; else gm_r2 <= gm_r1 ^ gm_r0;
+    end
+    always @(posedge gclk or negedge rst_n) begin
+        if (!rst_n) gm_r3 <= 8'h0; else gm_r3 <= gm_r2 & gm_r1;
+    end
+    always @(posedge gclk or negedge rst_n) begin
+        if (!rst_n) gm_r4 <= 8'h0; else gm_r4 <= gm_r3 | gm_r2;
+    end
+    always @(posedge gclk or negedge rst_n) begin
+        if (!rst_n) gm_r5 <= 8'h0; else gm_r5 <= gm_r4 + gm_r3;
+    end
+    always @(posedge gclk or negedge rst_n) begin
+        if (!rst_n) gm_r6 <= 8'h0; else gm_r6 <= gm_r5 - gm_r4;
+    end
+    always @(posedge gclk or negedge rst_n) begin
+        if (!rst_n) gm_r7 <= 8'h0; else gm_r7 <= gm_r6 ^ gm_r5;
+    end
+
+    //=========================================================================
+    // OUTPUT: Combine all domains (including gclk domain)
+    //=========================================================================
+    assign data_out = {mb_r7, ma_r7, fb2_r7, fb1_r7, fb0_r7, d8_r7, d4_r7, gm_r7};
 
 endmodule
 
@@ -346,6 +400,9 @@ module messy_clk_with_icg (
     input  wire        enable,
     input  wire        feedback_en,
 
+    // Main clock gate enable
+    input  wire        main_clk_en,
+
     // Per-domain enables
     input  wire        en_div2,
     input  wire        en_div4,
@@ -355,15 +412,32 @@ module messy_clk_with_icg (
 
     // Data
     input  wire [31:0] data_in,
-    output wire [31:0] data_out
+    output wire [31:0] data_out,
+
+    // Gated main clock output
+    output wire        gclk_main
 );
 
     //=========================================================================
-    // Clock Dividers
+    // Main Clock Gating (Instantiated ICG at root)
+    //=========================================================================
+    wire gclk;
+
+    clock_gating_cell u_icg_main (
+        .clk_in      (clk_in),
+        .enable      (main_clk_en),
+        .scan_enable (scan_enable),
+        .clk_out     (gclk)
+    );
+
+    assign gclk_main = gclk;
+
+    //=========================================================================
+    // Clock Dividers (driven by gated main clock)
     //=========================================================================
     reg clk_div2, clk_div4;
 
-    always @(posedge clk_in or negedge rst_n) begin
+    always @(posedge gclk or negedge rst_n) begin
         if (!rst_n) clk_div2 <= 1'b0;
         else if (enable) clk_div2 <= ~clk_div2;
     end
@@ -374,12 +448,12 @@ module messy_clk_with_icg (
     end
 
     //=========================================================================
-    // Feedback Clock Chain
+    // Feedback Clock Chain (uses gclk as source)
     //=========================================================================
     wire fb_mux0_out, fb_mux1_out;
     reg  fb_clk0, fb_clk1;
 
-    assign fb_mux0_out = feedback_en ? fb_clk1 : clk_in;
+    assign fb_mux0_out = feedback_en ? fb_clk1 : gclk;
 
     always @(posedge fb_mux0_out or negedge rst_n) begin
         if (!rst_n) fb_clk0 <= 1'b0;
@@ -505,9 +579,25 @@ module messy_clk_with_icg (
         if (!rst_n) r_mix_3 <= 8'h0; else r_mix_3 <= r_mix_2 ^ r_mix_0;
     end
 
+    // GCLK domain (main gated clock direct users)
+    reg [7:0] r_gclk_0, r_gclk_1, r_gclk_2, r_gclk_3;
+
+    always @(posedge gclk or negedge rst_n) begin
+        if (!rst_n) r_gclk_0 <= 8'h0; else r_gclk_0 <= data_in[7:0] ^ data_in[31:24];
+    end
+    always @(posedge gclk or negedge rst_n) begin
+        if (!rst_n) r_gclk_1 <= 8'h0; else r_gclk_1 <= r_gclk_0 + 8'hCC;
+    end
+    always @(posedge gclk or negedge rst_n) begin
+        if (!rst_n) r_gclk_2 <= 8'h0; else r_gclk_2 <= r_gclk_1 ^ r_gclk_0;
+    end
+    always @(posedge gclk or negedge rst_n) begin
+        if (!rst_n) r_gclk_3 <= 8'h0; else r_gclk_3 <= r_gclk_2 & r_gclk_1;
+    end
+
     //=========================================================================
-    // Output
+    // Output (includes gclk domain)
     //=========================================================================
-    assign data_out = {r_mix_3, r_fb1_3, r_fb0_3, r_div4_3};
+    assign data_out = {r_gclk_3, r_mix_3, r_fb1_3, r_fb0_3};
 
 endmodule
